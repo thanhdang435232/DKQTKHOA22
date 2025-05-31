@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang web đầu tiên</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+    }
+    h1 {
+      color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <h1>Xin chào! Đây là website của tôi.</h1>
+  <p>Chào mừng bạn đến với deptraitube.id.vn</p>
+</body>
+</html>
