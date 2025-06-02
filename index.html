@@ -11,7 +11,7 @@
 
   <script>
     // Kết nối MQTT Broker qua WebSocket
-    const client = mqtt.connect('ws://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8884/mqtt');
+    const client = mqtt.connect('ws://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8883/mqtt');
 
     client.on('connect', function () {
       console.log('Kết nối MQTT thành công');
