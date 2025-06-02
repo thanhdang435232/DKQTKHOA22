@@ -1,77 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Giám sát nhiệt độ từ ESP32</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <title>ESP Message Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #msg { font-size: 2em; color: green; }
+  </style>
 </head>
 <body>
-  <h2>Biểu đồ nhiệt độ từ ESP32</h2>
-  <canvas id="tempChart" width="600" height="300"></canvas>
+  <h1>ESP Message Viewer</h1>
+  <p>Latest message from ESP:</p>
+  <div id="msg">Chưa có dữ liệu</div>
 
   <script>
-    const ctx = document.getElementById('tempChart').getContext('2d');
+    const apiUrl = "https://your-app-name.herokuapp.com/api/latest";
 
-    const tempData = {
-      labels: [],
-      datasets: [{
-        label: 'Nhiệt độ (°C)',
-        data: [],
-        borderColor: 'red',
-        backgroundColor: 'rgba(255, 0, 0, 0.3)',
-        fill: false,
-        tension: 0.1
-      }]
-    };
-
-    const tempChart = new Chart(ctx, {
-      type: 'line',
-      data: tempData,
-      options: {
-        scales: {
-          y: {
-            suggestedMin: 20,
-            suggestedMax: 40,
-            title: {
-              display: true,
-              text: 'Nhiệt độ (°C)'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Thời gian'
-            }
-          }
-        }
+    async function fetchLatestMsg() {
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        document.getElementById('msg').textContent = data.latest || 'Chưa có dữ liệu';
+      } catch (error) {
+        document.getElementById('msg').textContent = 'Lỗi kết nối API';
+        console.error('Fetch error:', error);
       }
-    });
-
-    function fetchTemp() {
-      fetch("http://192.168.68.101/temperature")
-        .then(res => res.json())
-        .then(data => {
-          const now = new Date();
-          const timeStr = now.toLocaleTimeString();
-
-          // Thêm dữ liệu mới
-          tempChart.data.labels.push(timeStr);
-          tempChart.data.datasets[0].data.push(data.temperature);
-
-          // Giữ chỉ 10 điểm gần nhất
-          if (tempChart.data.labels.length > 10) {
-            tempChart.data.labels.shift();
-            tempChart.data.datasets[0].data.shift();
-          }
-
-          tempChart.update();
-        })
-        .catch(err => {
-          console.error("Lỗi lấy nhiệt độ từ ESP32:", err);
-        });
     }
 
-    setInterval(fetchTemp, 2000); // gọi mỗi 2 giây
+    // Lấy dữ liệu mỗi 2 giây
+    setInterval(fetchLatestMsg, 2000);
+
+    // Lấy dữ liệu lần đầu khi load trang
+    fetchLatestMsg();
   </script>
 </body>
 </html>
