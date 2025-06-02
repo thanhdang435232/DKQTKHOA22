@@ -6,40 +6,61 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
       padding: 40px;
-      background-color: #f9f9f9;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
     }
     #log {
+      margin-top: 20px;
       white-space: pre-wrap;
       background-color: #000;
       color: #0f0;
       padding: 20px;
       height: 300px;
-      overflow-y: scroll;
+      overflow-y: auto;
       font-size: 16px;
       border-radius: 8px;
+      text-align: left;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
     }
   </style>
-  <!-- Thư viện MQTT.js -->
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script> 
 </head>
 <body>
 
-  <h1>Terminal Web - Nhận dữ liệu từ ESP32</h1>
-  <div id="log">[INFO] Đang chờ dữ liệu...\n</div>
+  <h1>ESP32 - Đang chờ dữ liệu...</h1>
+  <div id="log">⏳ [INFO] Đang chờ dữ liệu...\n</div>
+
+  <!-- Thư viện MQTT.js -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script> 
 
   <script>
+    // Cấu hình MQTT Broker
     const brokerUrl = 'wss://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8884/mqtt';
-    const topic = 'esp32/hello';
+    const topic = 'esp32/hello'; // Topic ESP32 đang publish
 
-    const client = mqtt.connect(brokerUrl);
+    // Thông tin xác thực (nếu có)
+    const mqttUser = "thanh1234";
+    const mqttPassword = "1234Thanh@";
 
+    // Khởi tạo MQTT client
+    const client = mqtt.connect(brokerUrl, {
+      username: mqttUser,
+      password: mqttPassword
+    });
+
+    // Hàm thêm log vào màn hình
     function appendLog(text) {
       const logDiv = document.getElementById("log");
       logDiv.innerText += text + "\n";
-      logDiv.scrollTop = logDiv.scrollHeight;
+      logDiv.scrollTop = logDiv.scrollHeight; // Tự động scroll xuống
     }
 
+    // Khi kết nối thành công
     client.on('connect', () => {
       appendLog("[INFO] Kết nối MQTT thành công");
       client.subscribe(topic, (err) => {
@@ -51,6 +72,7 @@
       });
     });
 
+    // Khi nhận được tin nhắn
     client.on('message', (receivedTopic, message) => {
       if (receivedTopic === topic) {
         const receivedData = message.toString();
@@ -58,6 +80,7 @@
       }
     });
 
+    // Xử lý lỗi kết nối
     client.on('error', (err) => {
       appendLog("[ERROR] Lỗi kết nối MQTT: " + err.message);
     });
