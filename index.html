@@ -11,14 +11,16 @@
 <body>
   <h1>ESP Message Viewer</h1>
   <p>Latest message from ESP:</p>
-  <div id="msg">Chưa có dữ liệu</div>
+  <div id="msg">Đang chờ dữ liệu...</div>
 
   <script>
-    const apiUrl = "https://deptraitube.id.vn/api/receive";
+    // Thay đổi URL thành API backend bạn đã deploy
+    const apiUrl = "http://192.168.68.101:3000/api/latest";
 
     async function fetchLatestMsg() {
       try {
         const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('HTTP error ' + response.status);
         const data = await response.json();
         document.getElementById('msg').textContent = data.latest || 'Chưa có dữ liệu';
       } catch (error) {
@@ -27,11 +29,9 @@
       }
     }
 
-    // Lấy dữ liệu mỗi 2 giây
+    // Gọi API mỗi 2 giây
     setInterval(fetchLatestMsg, 2000);
-
-    // Lấy dữ liệu lần đầu khi load trang
-    fetchLatestMsg();
+    fetchLatestMsg(); // gọi ngay khi tải trang
   </script>
 </body>
 </html>
