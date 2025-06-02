@@ -13,26 +13,33 @@
     h1 {
       color: #333;
     }
+    #dataDisplay {
+      margin-top: 30px;
+      font-size: 36px;
+      color: green;
+      min-height: 50px;
+      transition: background-color 0.3s ease;
+    }
     #log {
-      margin-top: 20px;
       white-space: pre-wrap;
       background-color: #000;
       color: #0f0;
       padding: 20px;
-      height: 300px;
+      height: 200px;
       overflow-y: auto;
-      font-size: 16px;
+      font-size: 14px;
       border-radius: 8px;
-      text-align: left;
       width: 100%;
       max-width: 600px;
-      margin: 0 auto;
+      margin: 20px auto;
+      text-align: left;
     }
   </style>
 </head>
 <body>
 
   <h1>ESP32 - Đang chờ dữ liệu...</h1>
+  <div id="dataDisplay">Chưa có dữ liệu</div>
   <div id="log">⏳ [INFO] Đang chờ dữ liệu...\n</div>
 
   <!-- Thư viện MQTT.js -->
@@ -40,7 +47,7 @@
 
   <script>
     // Cấu hình MQTT Broker
-    const brokerUrl = 'wss://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8883/mqtt';
+    const brokerUrl = 'wss://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8884/mqtt';
     const topic = 'esp32/hello'; // Topic ESP32 đang publish
 
     // Thông tin xác thực (nếu có)
@@ -77,6 +84,7 @@
       if (receivedTopic === topic) {
         const receivedData = message.toString();
         appendLog(`[DATA] ${receivedData}`);
+        updateDisplay(receivedData);
       }
     });
 
@@ -84,6 +92,16 @@
     client.on('error', (err) => {
       appendLog("[ERROR] Lỗi kết nối MQTT: " + err.message);
     });
+
+    // Hàm cập nhật hiển thị dữ liệu
+    function updateDisplay(data) {
+      const displayDiv = document.getElementById("dataDisplay");
+      displayDiv.innerText = data;
+      displayDiv.style.backgroundColor = "#dff0d8";
+      setTimeout(() => {
+        displayDiv.style.backgroundColor = "transparent";
+      }, 500);
+    }
   </script>
 
 </body>
