@@ -2,13 +2,14 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Giám Sát Nhiệt Độ</title>
+    <title>Giám Sát & Điều Khiển Nhiệt Độ</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     <style>
         body {
             font-family: Arial;
             text-align: center;
             padding: 20px;
+            background-color: #f9f9f9;
         }
         canvas {
             max-width: 600px;
@@ -17,20 +18,28 @@
         input[type="number"] {
             padding: 5px;
             font-size: 1.2em;
+            width: 80px;
         }
         button {
             padding: 5px 10px;
             font-size: 1.2em;
         }
+        h2 {
+            color: #333;
+        }
     </style>
 </head>
 <body>
-    <h1> Giám Sát & Điều Khiển Nhiệt Độ </h1>
+    <h1>🌡️ Giám Sát & Điều Khiển Nhiệt Độ</h1>
     <h2>Nhiệt độ hiện tại: <span id="cur-temp">--</span> °C</h2>
 
-    <label for="setpoint">Đặt ngưỡng nhiệt độ:</label>
-    <input type="number" id="setpoint" step="0.1" min="0" max="100" />
-    <button onclick="setSetPoint()">Áp dụng</button>
+    <div>
+        <label>Ngưỡng dưới: </label>
+        <input type="number" id="low" step="0.1" min="0" max="100" value="25"/>
+        <label>Ngưỡng trên: </label>
+        <input type="number" id="high" step="0.1" min="0" max="100" value="35"/>
+        <button onclick="setSetPoint()">Áp dụng</button>
+    </div>
 
     <canvas id="tempChart"></canvas>
 
@@ -55,7 +64,7 @@
                     y: { beginAtZero: true }
                 }
             }
-        };
+        });
 
         function fetchData() {
             fetch('/api/data').then(res => res.json()).then(data => {
@@ -74,12 +83,13 @@
         fetchData();
 
         function setSetPoint() {
-            let sp = document.getElementById('setpoint').value;
+            let low = parseFloat(document.getElementById('low').value);
+            let high = parseFloat(document.getElementById('high').value);
             fetch('/api/setpoint', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ setpoint: sp })
-            }).then(() => alert("Đã đặt ngưỡng: " + sp + "°C"));
+                body: JSON.stringify({ low: low, high: high })
+            }).then(() => alert("Đã đặt ngưỡng: Từ " + low + " đến " + high + " °C"));
         }
     </script>
 </body>
