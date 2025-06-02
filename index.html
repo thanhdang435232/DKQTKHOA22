@@ -2,33 +2,67 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Nhận dữ liệu từ ESP32 qua MQTT</title>
+  <title>ESP32 - Chờ dữ liệu qua MQTT</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f9f9f9;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    #data {
+      margin-top: 20px;
+      font-size: 24px;
+      color: green;
+      min-height: 30px;
+    }
+  </style>
+  <!-- Thư viện MQTT.js -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script> 
 </head>
 <body>
-  <h1>Dữ liệu nhận từ ESP32:</h1>
-  <p id="output">Chờ dữ liệu...</p>
+
+  <h1>ESP32 - Đang chờ dữ liệu...</h1>
+  <div id="data">⏳ Đang chờ dữ liệu...</div>
 
   <script>
-    // Kết nối MQTT Broker qua WebSocket
-    const client = mqtt.connect('ws://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8883/mqtt');
+    // Cấu hình MQTT Broker
+    const brokerUrl = 'wss://5e4834b4d1744446a84305990afbf9e.s1.eu.hivemq.cloud:8883/mqtt';
+    const topic = 'esp32/hello'; // Topic ESP32 đang publish
 
-    client.on('connect', function () {
-      console.log('Kết nối MQTT thành công');
-      client.subscribe('esp32/hello', function (err) {
+    // Kết nối MQTT
+    const client = mqtt.connect(brokerUrl);
+
+    // Khi kết nối thành công
+    client.on('connect', () => {
+      console.log("Kết nối MQTT thành công");
+      client.subscribe(topic, (err) => {
         if (!err) {
-          document.getElementById("output").innerText = "Đang lắng nghe...";
+          document.getElementById("data").innerText = "✅ Đang lắng nghe...";
+        } else {
+          document.getElementById("data").innerText = "❌ Lỗi đăng ký topic";
         }
       });
     });
 
-    client.on('message', function (topic, message) {
-      if (topic === 'esp32/hello') {
-        const received = message.toString();
-        document.getElementById("output").innerText = received;
-        console.log("Nhận được:", received);
+    // Khi nhận được tin nhắn
+    client.on('message', (receivedTopic, message) => {
+      if (receivedTopic === topic) {
+        const receivedData = message.toString();
+        console.log("Nhận được:", receivedData);
+        document.getElementById("data").innerText = `📩 ${receivedData}`;
       }
     });
+
+    // Xử lý lỗi kết nối
+    client.on('error', (err) => {
+      console.error("Lỗi MQTT:", err);
+      document.getElementById("data").innerText = "⚠️ Lỗi kết nối MQTT";
+    });
   </script>
+
 </body>
 </html>
