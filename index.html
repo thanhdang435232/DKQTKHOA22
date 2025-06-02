@@ -1,90 +1,77 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Biểu đồ Nhiệt độ từ ESP32</title>
+  <title>Giám sát nhiệt độ từ ESP32</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background-color: #f5f6fa;
-    }
-    h1 {
-      color: #2c3e50;
-    }
-    canvas {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      margin-top: 20px;
-    }
-  </style>
 </head>
 <body>
-
-  <h1>🌡️ Theo dõi Nhiệt độ từ ESP32</h1>
-  <canvas id="tempChart" width="700" height="350"></canvas>
+  <h2>Biểu đồ nhiệt độ từ ESP32</h2>
+  <canvas id="tempChart" width="600" height="300"></canvas>
 
   <script>
     const ctx = document.getElementById('tempChart').getContext('2d');
-    const chart = new Chart(ctx, {
+
+    const tempData = {
+      labels: [],
+      datasets: [{
+        label: 'Nhiệt độ (°C)',
+        data: [],
+        borderColor: 'red',
+        backgroundColor: 'rgba(255, 0, 0, 0.3)',
+        fill: false,
+        tension: 0.1
+      }]
+    };
+
+    const tempChart = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Nhiệt độ (°C)',
-          data: [],
-          borderColor: '#e74c3c',
-          backgroundColor: 'rgba(231, 76, 60, 0.2)',
-          fill: true,
-          tension: 0.3
-        }]
-      },
+      data: tempData,
       options: {
         scales: {
+          y: {
+            suggestedMin: 20,
+            suggestedMax: 40,
+            title: {
+              display: true,
+              text: 'Nhiệt độ (°C)'
+            }
+          },
           x: {
             title: {
               display: true,
               text: 'Thời gian'
             }
-          },
-          y: {
-            title: {
-              display: true,
-              text: 'Nhiệt độ (°C)'
-            },
-            suggestedMin: 20,
-            suggestedMax: 40
           }
         }
       }
     });
 
-    function updateChart(tempValue) {
-      const now = new Date().toLocaleTimeString();
-      chart.data.labels.push(now);
-      chart.data.datasets[0].data.push(tempValue);
-
-      if (chart.data.labels.length > 20) {
-        chart.data.labels.shift();
-        chart.data.datasets[0].data.shift();
-      }
-
-      chart.update();
-    }
-
-    function fetchTemperature() {
-      fetch("http://192.168.68.101/temperature")  // ← Thay IP ESP32 ở đây
+    function fetchTemp() {
+      fetch("http://192.168.68.101/temperature")
         .then(res => res.json())
-        .then(data => updateChart(data.temperature))
-        .catch(err => console.error("❌ Không kết nối được ESP32:", err));
+        .then(data => {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString();
+
+          // Thêm dữ liệu mới
+          tempChart.data.labels.push(timeStr);
+          tempChart.data.datasets[0].data.push(data.temperature);
+
+          // Giữ chỉ 10 điểm gần nhất
+          if (tempChart.data.labels.length > 10) {
+            tempChart.data.labels.shift();
+            tempChart.data.datasets[0].data.shift();
+          }
+
+          tempChart.update();
+        })
+        .catch(err => {
+          console.error("Lỗi lấy nhiệt độ từ ESP32:", err);
+        });
     }
 
-    // Gọi mỗi 2 giây
-    setInterval(fetchTemperature, 2000);
+    setInterval(fetchTemp, 2000); // gọi mỗi 2 giây
   </script>
-
 </body>
 </html>
