@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Giám Sát & Điều Khiển Nhiệt Độ</title>
+    <meta charset="UTF-8" />
+    <title>Điều Khiển Nhiệt Độ</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
-            background-color: #f9f9f9;
+            background-color: #f4f4f4;
         }
         canvas {
             max-width: 600px;
             margin: auto;
         }
+        .controls {
+            margin: 20px 0;
+        }
         input[type="number"] {
+            width: 80px;
             padding: 5px;
             font-size: 1.2em;
-            width: 80px;
         }
         button {
             padding: 5px 10px;
@@ -33,64 +36,16 @@
     <h1>🌡️ Giám Sát & Điều Khiển Nhiệt Độ</h1>
     <h2>Nhiệt độ hiện tại: <span id="cur-temp">--</span> °C</h2>
 
-    <div>
-        <label>Ngưỡng dưới: </label>
-        <input type="number" id="low" step="0.1" min="0" max="100" value="25"/>
-        <label>Ngưỡng trên: </label>
-        <input type="number" id="high" step="0.1" min="0" max="100" value="35"/>
+    <div class="controls">
+        <label for="low">Ngưỡng dưới: </label>
+        <input type="number" id="low" value="25" step="0.1" min="0" max="100" />
+        <label for="high">Ngưỡng trên: </label>
+        <input type="number" id="high" value="35" step="0.1" min="0" max="100" />
         <button onclick="setSetPoint()">Áp dụng</button>
     </div>
 
     <canvas id="tempChart"></canvas>
 
-    <script>
-        const ctx = document.getElementById('tempChart').getContext('2d');
-        const tempChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Nhiệt độ (°C)',
-                    data: [],
-                    borderColor: '#e74c3c',
-                    fill: false,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                animation: false,
-                scales: {
-                    x: { ticks: { maxTicksLimit: 10 } },
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-
-        function fetchData() {
-            fetch('/api/data').then(res => res.json()).then(data => {
-                const times = data.map(d => d.time);
-                const temps = data.map(d => d.temp);
-
-                document.getElementById('cur-temp').textContent = temps[temps.length - 1].toFixed(2);
-
-                tempChart.data.labels = times;
-                tempChart.data.datasets[0].data = temps;
-                tempChart.update();
-            });
-        }
-
-        setInterval(fetchData, 5000);
-        fetchData();
-
-        function setSetPoint() {
-            let low = parseFloat(document.getElementById('low').value);
-            let high = parseFloat(document.getElementById('high').value);
-            fetch('/api/setpoint', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ low: low, high: high })
-            }).then(() => alert("Đã đặt ngưỡng: Từ " + low + " đến " + high + " °C"));
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
