@@ -1,57 +1,80 @@
-import sys
-import random
-import datetime
-from PyQt5 import QtWidgets
-from main_ui import Ui_MainWindow  # file chuyển từ .ui
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Biểu đồ nhiệt độ</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    canvas {
+      max-width: 800px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
 
+  <h2>Biểu đồ Nhiệt độ theo thời gian</h2>
+  <canvas id="tempChart"></canvas>
 
-class MyApp(QtWidgets.QMainWindow):
-    def __init__(self):
-        super(MyApp, self).__init__()
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
+  <script>
+    const ctx = document.getElementById('tempChart').getContext('2d');
 
-        # Tạo biểu đồ
-        self.canvas = FigureCanvas(Figure())
-        self.ui.plotWidget.layout().addWidget(self.canvas)
-        self.ax = self.canvas.figure.add_subplot(111)
+    const tempChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [], // Thời gian
+        datasets: [{
+          label: 'Nhiệt độ (°C)',
+          data: [],
+          borderColor: 'red',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: { display: true, text: 'Thời gian' }
+          },
+          y: {
+            title: { display: true, text: 'Nhiệt độ (°C)' },
+            beginAtZero: true,
+            suggestedMax: 40
+          }
+        }
+      }
+    });
 
-        # Dữ liệu ban đầu
-        self.times = []
-        self.temps = []
+    // Hàm sinh dữ liệu ngẫu nhiên và cập nhật biểu đồ
+    function updateChart() {
+      const now = new Date();
+      const timeLabel = now.toLocaleTimeString();
 
-        # Timer cập nhật mỗi 2 giây
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start(2000)
+      const newTemp = (25 + Math.random() * 5).toFixed(2); // giả lập
 
-    def update_plot(self):
-        # Giả lập đọc nhiệt độ
-        temp = round(25 + random.random()*5, 2)
-        time_now = datetime.datetime.now().strftime("%H:%M:%S")
+      tempChart.data.labels.push(timeLabel);
+      tempChart.data.datasets[0].data.push(newTemp);
 
-        self.times.append(time_now)
-        self.temps.append(temp)
+      if (tempChart.data.labels.length > 20) {
+        tempChart.data.labels.shift();
+        tempChart.data.datasets[0].data.shift();
+      }
 
-        if len(self.times) > 20:
-            self.times.pop(0)
-            self.temps.pop(0)
+      tempChart.update();
+    }
 
-        # Cập nhật biểu đồ
-        self.ax.clear()
-        self.ax.plot(self.times, self.temps, color='red', marker='o')
-        self.ax.set_title("Nhiệt độ theo thời gian")
-        self.ax.set_xlabel("Thời gian")
-        self.ax.set_ylabel("Nhiệt độ (°C)")
-        self.ax.tick_params(axis='x', rotation=45)
-        self.canvas.draw()
+    // Cập nhật mỗi 2 giây
+    setInterval(updateChart, 2000);
+  </script>
 
-
-if __name__ == "__main__":
-    from PyQt5 import QtCore
-    app = QtWidgets.QApplication(sys.argv)
-    win = MyApp()
-    win.show()
-    sys.exit(app.exec_())
+</body>
+</html>
