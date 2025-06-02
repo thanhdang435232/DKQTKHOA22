@@ -2,30 +2,30 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Giám sát Nhiệt độ từ Raspberry Pi</title>
+  <title>Biểu đồ Nhiệt độ từ ESP32</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
-      background-color: #f0f4f8;
       padding: 20px;
+      background-color: #f5f6fa;
+    }
+    h1 {
+      color: #2c3e50;
     }
     canvas {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
       margin-top: 20px;
-    }
-    h1 {
-      color: #1d3557;
     }
   </style>
 </head>
 <body>
 
-  <h1>🌡️ Nhiệt độ từ Raspberry Pi</h1>
-  <canvas id="tempChart" width="600" height="300"></canvas>
+  <h1>🌡️ Theo dõi Nhiệt độ từ ESP32</h1>
+  <canvas id="tempChart" width="700" height="350"></canvas>
 
   <script>
     const ctx = document.getElementById('tempChart').getContext('2d');
@@ -36,20 +36,25 @@
         datasets: [{
           label: 'Nhiệt độ (°C)',
           data: [],
-          borderColor: '#e63946',
-          backgroundColor: 'rgba(230,57,70,0.1)',
+          borderColor: '#e74c3c',
+          backgroundColor: 'rgba(231, 76, 60, 0.2)',
           fill: true,
-          tension: 0.3,
-          pointRadius: 4
+          tension: 0.3
         }]
       },
       options: {
         scales: {
           x: {
-            title: { display: true, text: 'Thời gian' }
+            title: {
+              display: true,
+              text: 'Thời gian'
+            }
           },
           y: {
-            title: { display: true, text: 'Nhiệt độ (°C)' },
+            title: {
+              display: true,
+              text: 'Nhiệt độ (°C)'
+            },
             suggestedMin: 20,
             suggestedMax: 40
           }
@@ -59,7 +64,6 @@
 
     function updateChart(tempValue) {
       const now = new Date().toLocaleTimeString();
-
       chart.data.labels.push(now);
       chart.data.datasets[0].data.push(tempValue);
 
@@ -71,19 +75,16 @@
       chart.update();
     }
 
-    function getTempFromRaspberry() {
-      fetch("http://192.168.68.101:5000/temperature") // ← sửa IP Raspberry ở đây
+    function fetchTemperature() {
+      fetch("http://192.168.68.101/temperature")  // ← Thay IP ESP32 ở đây
         .then(res => res.json())
-        .then(data => {
-          updateChart(data.temperature);
-        })
-        .catch(err => {
-          console.error("Lỗi khi kết nối Raspberry:", err);
-        });
+        .then(data => updateChart(data.temperature))
+        .catch(err => console.error("❌ Không kết nối được ESP32:", err));
     }
 
     // Gọi mỗi 2 giây
-    setInterval(getTempFromRaspberry, 2000);
+    setInterval(fetchTemperature, 2000);
   </script>
+
 </body>
 </html>
