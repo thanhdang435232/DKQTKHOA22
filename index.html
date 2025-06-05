@@ -5,9 +5,11 @@
   <title>GitHub Hello Viewer :))))</title>
   <style>
     body {
+      background-color: #fff;  /* nền trắng */
+      color: #000;             /* chữ đen */
       font-family: Arial, sans-serif;
       padding: 20px;
-      background: #f0f0f0;
+      margin: 0;
     }
     #log {
       white-space: pre-wrap;
@@ -15,75 +17,49 @@
       padding: 10px;
       height: 400px;
       overflow-y: scroll;
-      background: #fff;
-      margin-bottom: 10px;
-    }
-    #refreshBtn {
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
+      background: #f8f8f8;
+      color: #000;  /* chữ đen trong vùng log */
     }
   </style>
 </head>
 <body>
   <h2>📋 Danh sách "hello" từ GitHub</h2>
   <div id="log">Đang tải dữ liệu...</div>
-  <button id="refreshBtn">🔄 Tải lại ngay</button>
 
   <script>
     const githubUser = "thanhdang435232";
     const repoName = "DKQTKHOA22";
     const filePath = "data.json";
     const logDiv = document.getElementById("log");
-    const refreshBtn = document.getElementById("refreshBtn");
 
     async function fetchData() {
-      logDiv.textContent = "⏳ Đang tải dữ liệu...";
       try {
+        // Thêm ?t=timestamp để tránh cache trình duyệt và proxy
         const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}?t=${Date.now()}`;
-        const res = await fetch(url, {
-          cache: "no-store",
-          headers: { "Accept": "application/vnd.github.v3+json" }
-        });
-
-        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-
+        const res = await fetch(url, { cache: "no-store" });  // Đảm bảo không cache trình duyệt
+        if (!res.ok) throw new Error("HTTP error " + res.status);
         const data = await res.json();
-
-        // Kiểm tra data.content có tồn tại không
-        if (!data.content) throw new Error("File không có nội dung");
 
         // Giải mã base64, bỏ xuống dòng rồi parse JSON
         const content = atob(data.content.replace(/\n/g, ""));
         const json = JSON.parse(content);
         const messages = json.messages || [];
 
-        if (messages.length === 0) {
-          logDiv.textContent = "📭 Không có dòng 'hello' nào trong file.";
-          return;
-        }
-
-        // Tạo string hiển thị hiệu quả hơn
-        let output = "";
+        logDiv.innerText = "";
         messages.forEach((msg, i) => {
-          output += `[${i}] ${msg}\n`;
+          logDiv.innerText += `[${i}] ${msg}\n`;
         });
-        logDiv.textContent = output;
 
-        // Scroll xuống cuối cùng
+        // Scroll xuống cuối để thấy dòng mới nhất
         logDiv.scrollTop = logDiv.scrollHeight;
-
       } catch (err) {
-        logDiv.textContent = `⚠️ Lỗi tải dữ liệu: ${err.message}`;
+        logDiv.innerText = "⚠️ Không thể tải dữ liệu";
         console.error(err);
       }
     }
 
-    // Tải lại khi bấm nút
-    refreshBtn.addEventListener("click", fetchData);
-
-    // Tải lại tự động mỗi 10 giây (giảm tần suất so với 5s)
-    setInterval(fetchData, 10000);
+    // Tải lại dữ liệu mỗi 5 giây
+    setInterval(fetchData, 5000);
     fetchData();
   </script>
 </body>
