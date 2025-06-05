@@ -1,66 +1,123 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>GitHub Hello Viewer :))))</title>
+  <meta charset="UTF-8">
+  <title>Cập nhật tin nhắn</title>
   <style>
-    body {
-      background-color: #fff;  /* nền trắng */
-      color: #000;             /* chữ đen */
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      margin: 0;
-    }
-    #log {
-      white-space: pre-wrap;
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 400px;
-      overflow-y: scroll;
-      background: #f8f8f8;
-      color: #000;  /* chữ đen trong vùng log */
-    }
+    body { font-family: Arial; padding: 20px; }
+    input[type="text"] { width: 60%; padding: 5px; }
+    button { padding: 5px 10px; }
+    ul { list-style-type: none; padding-left: 0; }
+    li { margin: 5px 0; }
   </style>
 </head>
 <body>
-  <h2>📋 Danh sách "hello" từ GitHub</h2>
-  <div id="log">Đang tải dữ liệu...</div>
+
+  <h2>Thêm tin nhắn vào GitHub</h2>
+  <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
+  <button onclick="addMessage()">Gửi</button>
+
+  <h3>Danh sách tin nhắn:</h3>
+  <ul id="messagesList"></ul>
 
   <script>
     const githubUser = "thanhdang435232";
     const repoName = "DKQTKHOA22";
     const filePath = "data.json";
-    const logDiv = document.getElementById("log");
+    const githubToken = "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"; // ⚠️ Cảnh báo: Không nên dùng token này công khai!
+
+    const apiUrl = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`; 
 
     async function fetchData() {
       try {
-        // Thêm ?t=timestamp để tránh cache trình duyệt và proxy
-        const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}?t=${Date.now()}`;
-        const res = await fetch(url, { cache: "no-store" });  // Đảm bảo không cache trình duyệt
-        if (!res.ok) throw new Error("HTTP error " + res.status);
+        const res = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${githubToken}`,
+            'User-Agent': 'ESP32'
+          }
+        });
         const data = await res.json();
 
-        // Giải mã base64, bỏ xuống dòng rồi parse JSON
-        const content = atob(data.content.replace(/\n/g, ""));
-        const json = JSON.parse(content);
-        const messages = json.messages || [];
+        if (!data.content) throw new Error("Không có nội dung");
 
-        logDiv.innerText = "";
-        messages.forEach((msg, i) => {
-          logDiv.innerText += `[${i}] ${msg}\n`;
-        });
+        const decodedContent = atob(data.content);
+        const json = JSON.parse(decodedContent);
 
-        // Scroll xuống cuối để thấy dòng mới nhất
-        logDiv.scrollTop = logDiv.scrollHeight;
+        displayMessages(json.messages || []);
+        return data.sha;
       } catch (err) {
-        logDiv.innerText = "⚠️ Không thể tải dữ liệu";
-        console.error(err);
+        console.error("Lỗi đọc file:", err);
+        alert("Không thể đọc file từ GitHub");
+        return null;
       }
     }
 
-    // Tải lại dữ liệu mỗi 5 giây
-    setInterval(fetchData, 5000);
+    function displayMessages(messages) {
+      const list = document.getElementById("messagesList");
+      list.innerHTML = "";
+      messages.slice().reverse().forEach(msg => {
+        const li = document.createElement("li");
+        li.textContent = msg;
+        list.appendChild(li);
+      });
+    }
+
+    async function addMessage() {
+      const input = document.getElementById("messageInput");
+      const newMsg = input.value.trim();
+      if (!newMsg) return;
+
+      const sha = await fetchData();
+      if (!sha) return;
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${githubToken}`,
+            'User-Agent': 'ESP32'
+          }
+        });
+        const data = await res.json();
+        const oldContent = JSON.parse(atob(data.content));
+        oldContent.messages.push(newMsg);
+
+        const updatedJson = JSON.stringify(oldContent, null, 2);
+        const encodedContent = btoa(updatedJson);
+
+        const putData = {
+          message: "Cập nhật tin nhắn từ web",
+          content: encodedContent,
+          sha: data.sha
+        };
+
+        const updateRes = await fetch(apiUrl, {
+          method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${githubToken}`,
+            'User-Agent': 'ESP32',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(putData)
+        });
+
+        const result = await updateRes.json();
+        if (updateRes.ok) {
+          alert("Cập nhật thành công!");
+          input.value = "";
+          fetchData();
+        } else {
+          alert("Lỗi khi cập nhật: " + (result.message || "Unknown error"));
+        }
+      } catch (err) {
+        console.error("Lỗi gửi:", err);
+        alert("Lỗi khi cập nhật.");
+      }
+    }
+
+    // Load ban đầu
     fetchData();
+    setInterval(fetchData, 10000); // Cập nhật mỗi 10 giây
   </script>
 </body>
 </html>
