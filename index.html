@@ -1,118 +1,68 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Nhận dữ liệu từ ESP32</title>
+  <title>HiveMQ Cloud Data</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      padding: 40px;
-      text-align: center;
+      padding: 2em;
+      background-color: #f9f9f9;
     }
+
     h1 {
       color: #333;
     }
-    #dataDisplay {
-      margin-top: 30px;
-      font-size: 36px;
+
+    #data {
+      font-size: 2em;
+      margin-top: 20px;
       color: green;
-      min-height: 50px;
-      transition: background-color 0.3s ease;
-    }
-    #log {
-      white-space: pre-wrap;
-      background-color: #000;
-      color: #0f0;
-      padding: 20px;
-      height: 200px;
-      overflow-y: auto;
-      font-size: 14px;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 600px;
-      margin: 20px auto;
-      text-align: left;
     }
   </style>
 </head>
 <body>
+  <h1>Nhận dữ liệu từ ESP32:</h1>
+  <div id="data">Chờ dữ liệu...</div>
 
-  <h1>ESP32 - Đang chờ dữ liệu...</h1>
-  <div id="dataDisplay">Chưa có dữ liệu</div>
-  <div id="log">⏳ [INFO] Đang chờ dữ liệu...\n</div>
-
-  <!-- Thư viện MQTT.js từ CDN hoạt động -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script> 
+  <!-- MQTT.js từ CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt.js/4.3.7/mqtt.min.js"></script> 
 
   <script>
-    // Cấu hình MQTT Broker
-    const brokerUrl = 'wss://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8883/mqtt';
-    const topic = 'esp32/hello'; // Topic mà ESP32 publish
+    const clientId = 'web_' + Math.random().toString(16).substr(2, 8);
+    const host = 'wss://534e94203b374c449f2f7d6b7faf3bcf.s1.eu.hivemq.cloud:8000/mqtt';
 
-    // Thông tin xác thực (nếu có)
-    const mqttUser = "thanh1234";
-    const mqttPassword = "1234Thanh@";
+    const options = {
+      clientId: clientId,
+      clean: true,
+      connectTimeout: 4000,
+      username: 'thanh', // Username
+      password: 'thanh317@T', // Password
+      will: {
+        topic: '/esp32/status',
+        payload: 'Web disconnected',
+        qos: 0,
+        retain: false
+      }
+    };
 
-    // Khởi tạo MQTT client
-    const client = mqtt.connect(brokerUrl, {
-      username: mqttUser,
-      password: mqttPassword
-    });
+    const client = mqtt.connect(host, options);
 
-    // Hàm thêm log vào màn hình
-    function appendLog(text) {
-      const logDiv = document.getElementById("log");
-      logDiv.innerText += text + "\n";
-      logDiv.scrollTop = logDiv.scrollHeight; // Tự động scroll xuống
-    }
-
-    // Khi kết nối thành công
     client.on('connect', () => {
-      appendLog("[INFO] Kết nối MQTT thành công");
-      client.subscribe(topic, (err) => {
+      console.log('Connected to HiveMQ Cloud');
+      client.subscribe('/esp32/test', (err) => {
         if (!err) {
-          appendLog("[INFO] Đang lắng nghe topic: " + topic);
-        } else {
-          appendLog("[ERROR] Không thể đăng ký topic");
+          document.getElementById("data").innerText = "Đang chờ dữ liệu...";
         }
       });
     });
 
-    // Khi nhận được tin nhắn
-    client.on('message', (receivedTopic, message) => {
-      if (receivedTopic === topic) {
+    client.on('message', (topic, message) => {
+      if (topic === '/esp32/test') {
         const receivedData = message.toString();
-        appendLog(`[DATA] ${receivedData}`);
-        updateDisplay(receivedData);
+        document.getElementById("data").innerText = receivedData;
       }
     });
-
-    // Xử lý lỗi kết nối
-    client.on('error', (err) => {
-      appendLog("[ERROR] Lỗi kết nối MQTT: " + err.message);
-      appendLog("[INFO] Đang thử kết nối lại sau 5 giây...");
-      setTimeout(() => {
-        client.reconnect();
-      }, 5000);
-    });
-
-    // Khi mất kết nối
-    client.on('disconnect', () => {
-      appendLog("[INFO] Mất kết nối với MQTT broker.");
-    });
-
-    // Hàm cập nhật giao diện với dữ liệu nhận được
-    function updateDisplay(data) {
-      const display = document.getElementById("dataDisplay");
-      display.textContent = data;
-
-      // Hiệu ứng nhấp nháy khi có dữ liệu mới
-      display.style.backgroundColor = "#d4f1c7";
-      setTimeout(() => {
-        display.style.backgroundColor = "transparent";
-      }, 600);
-    }
   </script>
 </body>
 </html>
