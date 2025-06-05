@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>GitHub Hello Viewer</title>
   <style>
     body {
@@ -15,23 +15,36 @@
       height: 400px;
       overflow-y: scroll;
       background: #f8f8f8;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h2>📋 Danh sách "hello" từ GitHub</h2>
   <div id="log">Đang tải dữ liệu...</div>
+  <button id="btnClear">🗑️ Xóa dữ liệu</button>
+  <p id="status"></p>
 
   <script>
     const githubUser = "thanhdang435232";
     const repoName = "DKQTKHOA22";
     const filePath = "data.json";
+    const githubToken = "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"; // **Chú ý bảo mật token**
+    
     const logDiv = document.getElementById("log");
+    const statusP = document.getElementById("status");
+    const btnClear = document.getElementById("btnClear");
 
     async function fetchData() {
       try {
-        const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`;
-        const res = await fetch(url);
+        const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}?t=${Date.now()}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP error " + res.status);
         const data = await res.json();
 
         const content = atob(data.content.replace(/\n/g, ""));
@@ -42,16 +55,67 @@
         messages.forEach((msg, i) => {
           logDiv.innerText += `[${i}] ${msg}\n`;
         });
-
         logDiv.scrollTop = logDiv.scrollHeight;
+
+        return data.sha;  // Trả về sha của file để dùng khi cập nhật
       } catch (err) {
         logDiv.innerText = "⚠️ Không thể tải dữ liệu";
         console.error(err);
+        return null;
       }
     }
 
-    // Tải mỗi 5 giây
-    setInterval(fetchData, 2000);
+    async function clearData() {
+      statusP.innerText = "Đang xóa dữ liệu...";
+      btnClear.disabled = true;
+
+      try {
+        // Lấy SHA file hiện tại (bắt buộc để cập nhật file)
+        const urlGet = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`;
+        const resGet = await fetch(urlGet);
+        if (!resGet.ok) throw new Error("Không lấy được SHA file");
+        const dataGet = await resGet.json();
+        const sha = dataGet.sha;
+
+        // Nội dung JSON mới (mảng rỗng)
+        const newContent = JSON.stringify({ messages: [] });
+        const base64Content = btoa(newContent);
+
+        // Gửi PUT request cập nhật file với mảng rỗng
+        const urlPut = urlGet;
+        const resPut = await fetch(urlPut, {
+          method: "PUT",
+          headers: {
+            "Authorization": "Bearer " + githubToken,
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0"
+          },
+          body: JSON.stringify({
+            message: "Clear data from web",
+            content: base64Content,
+            sha: sha
+          })
+        });
+
+        if (!resPut.ok) {
+          const errData = await resPut.json();
+          throw new Error(errData.message || "Lỗi khi xóa dữ liệu");
+        }
+
+        statusP.innerText = "✅ Đã xóa dữ liệu thành công!";
+        await fetchData();  // Tải lại dữ liệu mới
+      } catch (err) {
+        statusP.innerText = "❌ Xóa dữ liệu thất bại: " + err.message;
+        console.error(err);
+      } finally {
+        btnClear.disabled = false;
+      }
+    }
+
+    btnClear.addEventListener("click", clearData);
+
+    // Load dữ liệu và refresh mỗi 5 giây
+    setInterval(fetchData, 5000);
     fetchData();
   </script>
 </body>
