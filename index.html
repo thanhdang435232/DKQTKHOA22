@@ -30,14 +30,14 @@
 
   <script>
     const clientId = 'web_' + Math.random().toString(16).substr(2, 8);
-    const host = '534e94203b374c449f2f7d6b7faf3bcf.s1.eu.hivemq.cloud:8884/mqtt';
+    const host = 'wss://534e94203b374c449f2f7d6b7faf3bcf.s1.eu.hivemq.cloud:8000/mqtt';
 
     const options = {
       clientId: clientId,
       clean: true,
       connectTimeout: 4000,
-      username: 'thanh', // Username
-      password: 'thanh317@T', // Password
+      username: 'thanh',
+      password: 'thanh317@T',
       will: {
         topic: '/esp32/status',
         payload: 'Web disconnected',
@@ -53,6 +53,8 @@
       client.subscribe('/esp32/test', (err) => {
         if (!err) {
           document.getElementById("data").innerText = "Đang chờ dữ liệu...";
+        } else {
+          console.error('Failed to subscribe:', err);
         }
       });
     });
@@ -61,7 +63,20 @@
       if (topic === '/esp32/test') {
         const receivedData = message.toString();
         document.getElementById("data").innerText = receivedData;
+        console.log('Received:', receivedData); // Log để debug
       }
+    });
+
+    client.on('error', (error) => {
+      console.error('MQTT Error:', error);
+    });
+
+    client.on('reconnect', () => {
+      console.log('Reconnecting...');
+    });
+
+    client.on('close', () => {
+      console.log('Connection closed');
     });
   </script>
 </body>
