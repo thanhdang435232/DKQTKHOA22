@@ -1,59 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>GitHub Data Viewer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hiển thị dữ liệu GitHub</title>
   <style>
-    body {
-      font-family: monospace;
-      background: #111;
-      color: #0f0;
-      padding: 20px;
-    }
-    #log {
-      white-space: pre-line;
-      border: 1px solid #0f0;
-      padding: 10px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 30px auto; }
+    h1 { text-align: center; }
+    ul { list-style-type: none; padding: 0; }
+    li { padding: 8px 12px; background: #f0f0f0; margin-bottom: 6px; border-radius: 5px; }
+    button { padding: 10px 20px; margin-top: 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    #status { margin-top: 10px; font-style: italic; }
   </style>
 </head>
 <body>
-  <h2>📡 GitHub Hello Log</h2>
-  <div id="log"></div>
+
+  <h1>Dữ liệu messages từ GitHub</h1>
+  <ul id="messagesList">Đang tải dữ liệu...</ul>
+
+  <button id="btnClear">Xóa dữ liệu cũ (Chưa có chức năng)</button>
+  <div id="status"></div>
 
   <script>
-    const githubUser = "thanhdang435232";
-    const repoName = "DKQTKHOA22";
-    const filePath = "data.json";
-    const logDiv = document.getElementById("log");
+    const githubUser = 'thanhdang435232';
+    const repoName = 'DKQTKHOA22';
+    const filePath = 'data.json';
 
-    async function fetchData() {
+    const messagesList = document.getElementById('messagesList');
+    const status = document.getElementById('status');
+    const btnClear = document.getElementById('btnClear');
+
+    async function fetchGitHubFile() {
+      messagesList.innerHTML = 'Đang tải dữ liệu...';
+      status.textContent = '';
+
+      const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`;
+
       try {
-        const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            // Nếu cần token để repo private thì thêm dòng bên dưới (đổi YOUR_TOKEN)
+            // 'Authorization': 'token YOUR_TOKEN',
+          }
+        });
+
+        if (!res.ok) {
+          messagesList.innerHTML = `Lỗi tải dữ liệu: ${res.status} ${res.statusText}`;
+          return;
+        }
+
         const data = await res.json();
 
-        // Decode base64
-        const content = atob(data.content);
-        const parsed = JSON.parse(content);
-        const message = parsed.message;
+        // Dữ liệu content dạng base64
+        const contentBase64 = data.content.replace(/\n/g, '');
+        const contentJsonStr = atob(contentBase64);
 
-        // Append message
-        const time = new Date().toLocaleTimeString();
-        logDiv.innerText += `[${time}] ${message}\n`;
+        const contentObj = JSON.parse(contentJsonStr);
+        const messages = contentObj.messages;
 
-        // Auto scroll to bottom
-        logDiv.scrollTop = logDiv.scrollHeight;
-      } catch (err) {
-        console.error("Error:", err);
+        if (!messages || messages.length === 0) {
+          messagesList.innerHTML = '<li>Chưa có dữ liệu messages</li>';
+          return;
+        }
+
+        // Hiển thị danh sách messages
+        messagesList.innerHTML = '';
+        messages.forEach(msg => {
+          const li = document.createElement('li');
+          li.textContent = msg;
+          messagesList.appendChild(li);
+        });
+
+      } catch (error) {
+        messagesList.innerHTML = 'Lỗi khi tải dữ liệu: ' + error.message;
       }
     }
 
-    // Gọi fetch mỗi 5 giây
-    setInterval(fetchData, 5000);
-    fetchData(); // Gọi lần đầu
+    btnClear.addEventListener('click', () => {
+      alert('Chức năng xóa dữ liệu cũ bạn cần implement trên ESP32 để gọi API hoặc thực hiện xóa file trên GitHub.');
+    });
+
+    // Load dữ liệu khi mở trang
+    fetchGitHubFile();
+
+    // Tự động refresh sau mỗi 60 giây
+    setInterval(fetchGitHubFile, 60000);
+
   </script>
+
 </body>
 </html>
