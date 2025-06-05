@@ -1,27 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>GitHub Data Viewer</title>
+  <title>GitHub Hello Viewer</title>
   <style>
     body {
-      font-family: monospace;
-      background: #111;
-      color: #0f0;
+      font-family: Arial, sans-serif;
       padding: 20px;
     }
     #log {
-      white-space: pre-line;
-      border: 1px solid #0f0;
+      white-space: pre-wrap;
+      border: 1px solid #ccc;
       padding: 10px;
-      max-height: 80vh;
-      overflow-y: auto;
+      height: 400px;
+      overflow-y: scroll;
+      background: #f8f8f8;
     }
   </style>
 </head>
 <body>
-  <h2>📡 GitHub Hello Log</h2>
-  <div id="log"></div>
+  <h2>📋 Danh sách "hello" từ GitHub</h2>
+  <div id="log">Đang tải dữ liệu...</div>
 
   <script>
     const githubUser = "thanhdang435232";
@@ -35,25 +34,25 @@
         const res = await fetch(url);
         const data = await res.json();
 
-        // Decode base64
-        const content = atob(data.content);
-        const parsed = JSON.parse(content);
-        const message = parsed.message;
+        const content = atob(data.content.replace(/\n/g, ""));
+        const json = JSON.parse(content);
+        const messages = json.messages || [];
 
-        // Append message
-        const time = new Date().toLocaleTimeString();
-        logDiv.innerText += `[${time}] ${message}\n`;
+        logDiv.innerText = "";
+        messages.forEach((msg, i) => {
+          logDiv.innerText += `[${i}] ${msg}\n`;
+        });
 
-        // Auto scroll to bottom
         logDiv.scrollTop = logDiv.scrollHeight;
       } catch (err) {
-        console.error("Error:", err);
+        logDiv.innerText = "⚠️ Không thể tải dữ liệu";
+        console.error(err);
       }
     }
 
-    // Gọi fetch mỗi 5 giây
+    // Tải mỗi 5 giây
     setInterval(fetchData, 5000);
-    fetchData(); // Gọi lần đầu
+    fetchData();
   </script>
 </body>
 </html>
