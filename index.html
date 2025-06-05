@@ -31,7 +31,7 @@
 
     async function fetchData() {
       try {
-        const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`;
+        const url = 'https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}';
         const res = await fetch(url);
         const data = await res.json();
 
