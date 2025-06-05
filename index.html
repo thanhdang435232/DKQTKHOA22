@@ -1,31 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Raspberry Pi Says Hello</title>
+  <meta charset="UTF-8" />
+  <title>Nhận dữ liệu từ ESP32</title>
   <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 60px; }
-    #message { font-size: 2em; color: green; margin-top: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 40px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    #dataDisplay {
+      margin-top: 30px;
+      font-size: 36px;
+      color: green;
+      min-height: 50px;
+      transition: background-color 0.3s ease;
+    }
+    #log {
+      white-space: pre-wrap;
+      background-color: #000;
+      color: #0f0;
+      padding: 20px;
+      height: 200px;
+      overflow-y: auto;
+      font-size: 14px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
-  <h1>Tin nhắn từ Raspberry Pi</h1>
-  <div id="message">Chờ dữ liệu...</div>
+
+  <h1>ESP32 - Đang chờ dữ liệu...</h1>
+  <div id="dataDisplay">Chưa có dữ liệu</div>
+  <div id="log">⏳ [INFO] Đang chờ dữ liệu...\n</div>
+
+  <!-- Thư viện MQTT.js từ CDN hoạt động -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script> 
 
   <script>
-    async function fetchMessage() {
-      try {
-        // Nếu dùng Google Apps Script:
-        const res = await fetch("https://script.google.com/macros/s/ABC123/exec"); 
-        const text = await res.text();
-        document.getElementById("message").innerText = text;
-      } catch (err) {
-        console.error("Lỗi tải dữ liệu:", err);
-      }
+    // Cấu hình MQTT Broker
+    const brokerUrl = 'wss://5e4834b4d1744446a84305990afbfb9e.s1.eu.hivemq.cloud:8883/mqtt';
+    const topic = 'esp32/hello'; // Topic mà ESP32 publish
+
+    // Thông tin xác thực (nếu có)
+    const mqttUser = "thanh1234";
+    const mqttPassword = "1234Thanh@";
+
+    // Khởi tạo MQTT client
+    const client = mqtt.connect(brokerUrl, {
+      username: mqttUser,
+      password: mqttPassword
+    });
+
+    // Hàm thêm log vào màn hình
+    function appendLog(text) {
+      const logDiv = document.getElementById("log");
+      logDiv.innerText += text + "\n";
+      logDiv.scrollTop = logDiv.scrollHeight; // Tự động scroll xuống
     }
 
-    setInterval(fetchMessage, 2000); // Cập nhật mỗi 2 giây
-    fetchMessage(); // Lần đầu
+    // Khi kết nối thành công
+    client.on('connect', () => {
+      appendLog("[INFO] Kết nối MQTT thành công");
+      client.subscribe(topic, (err) => {
+        if (!err) {
+          appendLog("[INFO] Đang lắng nghe topic: " + topic);
+        } else {
+          appendLog("[ERROR] Không thể đăng ký topic");
+        }
+      });
+    });
+
+    // Khi nhận được tin nhắn
+    client.on('message', (receivedTopic, message) => {
+      if (receivedTopic === topic) {
+        const receivedData = message.toString();
+        appendLog(`[DATA] ${receivedData}`);
+        updateDisplay(receivedData);
+      }
+    });
+
+    // Xử lý lỗi kết nối
+    client.on('error', (err) => {
+      appendLog("[ERROR] Lỗi kết nối MQTT: " + err.message);
+      appendLog("[INFO] Đang thử kết nối lại sau 5 giây...");
+      setTimeout(() => {
+        client.reconnect();
+      }, 5000);
+    });
+
+    // Khi mất kết nối
+    client.on('disconnect', () => {
+      appendLog("[INFO] Mất kết nối với MQTT broker.");
+    });
+
+    // Hàm cập nhật giao diện với dữ liệu nhận được
+    function updateDisplay(data) {
+      const display = document.getElementById("dataDisplay");
+      display.textContent = data;
+
+      // Hiệu ứng nhấp nháy khi có dữ liệu mới
+      display.style.backgroundColor = "#d4f1c7";
+      setTimeout(() => {
+        display.style.backgroundColor = "transparent";
+      }, 600);
+    }
   </script>
 </body>
 </html>
