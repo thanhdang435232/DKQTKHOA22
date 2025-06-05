@@ -1,45 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ESP32 Data Display</title>
+  <meta charset="UTF-8">
+  <title>GitHub Data Viewer</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 2em;
-      background-color: #f9f9f9;
+      font-family: monospace;
+      background: #111;
+      color: #0f0;
+      padding: 20px;
     }
-
-    h1 {
-      color: #333;
-    }
-
-    #data {
-      font-size: 2em;
-      margin-top: 20px;
-      color: green;
+    #log {
+      white-space: pre-line;
+      border: 1px solid #0f0;
+      padding: 10px;
+      max-height: 80vh;
+      overflow-y: auto;
     }
   </style>
 </head>
 <body>
-  <h1>Nhận dữ liệu từ ESP32:</h1>
-  <div id="data">Chờ dữ liệu...</div>
+  <h2>📡 GitHub Hello Log</h2>
+  <div id="log"></div>
 
   <script>
+    const githubUser = "thanhdang435232";
+    const repoName = "DKQTKHOA22";
+    const filePath = "data.json";
+    const logDiv = document.getElementById("log");
+
     async function fetchData() {
       try {
-        const response = await fetch('https://raw.githubusercontent.com/thanhdang435232/DKQTKHOA22/main/data.json'); 
-        if (!response.ok) throw new Error("Không thể tải file");
+        const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${filePath}`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-        const data = await response.json();
-        document.getElementById("data").innerText = data.message || "Không có dữ liệu";
+        // Decode base64
+        const content = atob(data.content);
+        const parsed = JSON.parse(content);
+        const message = parsed.message;
+
+        // Append message
+        const time = new Date().toLocaleTimeString();
+        logDiv.innerText += `[${time}] ${message}\n`;
+
+        // Auto scroll to bottom
+        logDiv.scrollTop = logDiv.scrollHeight;
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        console.error("Error:", err);
       }
     }
 
-    setInterval(fetchData, 2000); // Cập nhật mỗi 2s
-    fetchData(); // Lần đầu tiên
+    // Gọi fetch mỗi 5 giây
+    setInterval(fetchData, 5000);
+    fetchData(); // Gọi lần đầu
   </script>
 </body>
 </html>
