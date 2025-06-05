@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>HiveMQ Cloud Data</title>
+  <title>ESP32 Data Display</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,59 +25,21 @@
   <h1>Nhận dữ liệu từ ESP32:</h1>
   <div id="data">Chờ dữ liệu...</div>
 
-  <!-- MQTT.js từ CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt.js/4.3.7/mqtt.min.js"></script> 
-
   <script>
-    const clientId = 'web_' + Math.random().toString(16).substr(2, 8);
-    const host = 'wss://534e94203b374c449f2f7d6b7faf3bcf.s1.eu.hivemq.cloud:8000/mqtt';
+    async function fetchData() {
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/thanhdang435232/DKQTKHOA22/main/data.json'); 
+        if (!response.ok) throw new Error("Không thể tải file");
 
-    const options = {
-      clientId: clientId,
-      clean: true,
-      connectTimeout: 4000,
-      username: 'thanh',
-      password: 'thanh317@T',
-      will: {
-        topic: '/esp32/status',
-        payload: 'Web disconnected',
-        qos: 0,
-        retain: false
+        const data = await response.json();
+        document.getElementById("data").innerText = data.message || "Không có dữ liệu";
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
       }
-    };
+    }
 
-    const client = mqtt.connect(host, options);
-
-    client.on('connect', () => {
-      console.log('Connected to HiveMQ Cloud');
-      client.subscribe('/esp32/test', (err) => {
-        if (!err) {
-          document.getElementById("data").innerText = "Đang chờ dữ liệu...";
-        } else {
-          console.error('Failed to subscribe:', err);
-        }
-      });
-    });
-
-    client.on('message', (topic, message) => {
-      if (topic === '/esp32/test') {
-        const receivedData = message.toString();
-        document.getElementById("data").innerText = receivedData;
-        console.log('Received:', receivedData); // Log để debug
-      }
-    });
-
-    client.on('error', (error) => {
-      console.error('MQTT Error:', error);
-    });
-
-    client.on('reconnect', () => {
-      console.log('Reconnecting...');
-    });
-
-    client.on('close', () => {
-      console.log('Connection closed');
-    });
+    setInterval(fetchData, 2000); // Cập nhật mỗi 2s
+    fetchData(); // Lần đầu tiên
   </script>
 </body>
 </html>
