@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 
+app.use(express.json());
+
 // API nhận dữ liệu cảm biến
 app.post("/api/data", (req, res) => {
   console.log("Dữ liệu nhận được:", req.body);
